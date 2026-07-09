@@ -41,6 +41,45 @@ the same disease (human liver cirrhosis) to localize each gene.
 - **Composition shift** (stretch analysis): cell-type proportions compared
   healthy vs cirrhotic (chi-square + per-type proportion tests, BH-adjusted),
   echoing the paper's own "fibrotic niche" composition-shift finding.
+- **Gut-liver axis extension**: a literature check (below) found that GSE136103
+  has already been reused for a gut-liver-axis question (LPS-detoxifying
+  enzyme AOAH in hepatocytes/macrophages), and separately that `THBS2`
+  activates stellate cells via the TLR4-TGF-β/FAK pathway in an independent
+  mouse study — but nobody had checked LPS-receptor expression on the
+  Mesenchyme/stellate population in this human cohort. `scripts/06_gutliver_lps_pathway.R`
+  checks LPS recognition-complex genes (`LBP`, `CD14`, `TLR4`, `LY96`/MD-2)
+  across cell types and tests their cell-level correlation with
+  `THBS2`/`LUM`/`THY1` within cirrhotic Mesenchyme cells.
+
+## Literature context (checked before extending the analysis)
+
+Before deciding where to take this project next, recent (2023-2026) literature
+using GSE136103 and each of the 7 candidate genes was reviewed:
+
+- GSE136103 has been reused for NAFLD-fibrosis subsetting, an HSC
+  heterogeneity study, a fibrogenic-macrophage atlas, deconvolution
+  references, a drug-repurposing patent (cathepsin B/H inhibitors — unrelated
+  genes), and the gut-liver-axis/AOAH paper above. **None localize this
+  specific 7-gene panel** or connect it back to a bulk MASLD fibrosis
+  screen — this project's core angle is not duplicated elsewhere.
+- `THY1` (CD90) and `EPCAM` are well-established canonical markers (activated
+  stellate cell / ductular reaction, respectively) — consistent with, not
+  novel relative to, existing literature.
+- `THBS2`: an independent 2026 mouse study (LXN-THBS2 axis, GSE174748) shows
+  it activates HSCs via TLR4-TGF-β/FAK — supports this project's Mesenchyme
+  localization finding.
+- `LUM`: known since 2012 as a fibrosis-associated ECM gene, confirmed as a
+  stage-3 (myofibroblast) activated-HSC marker in a mouse scRNA-seq study —
+  this project's human Mesenchyme localization is a cross-species
+  confirmation, not a new discovery.
+- `CCL20`: a 2018 in vitro study (LX-2 stellate cell line + palmitic acid
+  loading) reported HSCs as the primary CCL20 source in NAFLD. **This
+  project's in vivo data disagrees** — Mesenchyme cells show near-zero CCL20
+  detection (0.3-0.7% expressing, see Limitations) in this cirrhosis cohort.
+  This discrepancy is reported rather than smoothed over; plausible
+  explanations include immortalized-cell-line artifact, scRNA-seq dropout for
+  a lowly-expressed secreted cytokine, or a genuine difference between the
+  NAFLD/palmitic-acid stimulus and mixed-etiology cirrhosis.
 
 ## Results
 
@@ -91,6 +130,28 @@ sharply — i.e., the fibrogenic signal in cirrhosis reflects activation of
 existing stellate cells rather than net stellate-cell expansion, a
 distinction bulk RNA-seq alone cannot make.
 
+**Gut-liver axis / LPS receptor expression**
+(`results/tables/06_lps_pathway_summary.csv`,
+`results/figures/06_lps_pathway_dotplot.png`): as expected, MP
+(macrophages/monocytes) is the dominant LPS-sensing population (`CD14`
+64-79%, `LY96` 57-69% expressing) and Hepatocyte is the dominant `LBP`
+source — both textbook biology, serving as a positive-control sanity check.
+In the **Mesenchyme** population, `CD14` and `LY96`(MD-2) expression rise
+markedly from healthy to cirrhotic (`CD14` 8.2%→16.9%, `LY96` 4.1%→19.8%);
+`TLR4` itself stays low in absolute terms (0.4%→1.3%) but also increases
+~3.5-fold. Within cirrhotic Mesenchyme cells, `LY96` shows the clearest
+(modest) positive cell-level correlation with the fibrogenic genes (Spearman
+ρ = 0.18-0.25 vs `THBS2`/`LUM`/`THY1`;
+`results/tables/06_lps_fibrogenic_correlation_mesenchyme_cirrhotic.csv`),
+`TLR4` more weakly so (ρ = 0.05-0.15). This is consistent with, and extends
+to a human cirrhosis cohort, the published mouse finding that `THBS2` acts
+through TLR4 signaling in stellate cells — i.e., activated stellate cells in
+cirrhotic liver upregulate the accessory machinery to sense gut-derived LPS
+directly, alongside their fibrogenic gene program. The correlations are
+modest and `TLR4` transcript levels are low (a known scRNA-seq limitation —
+see Limitations), so this is reported as suggestive support for a
+gut-liver-axis mechanism, not a confirmed causal link.
+
 ## Pipeline
 
 ```
@@ -101,6 +162,7 @@ scripts/02_clustering.R                # FindClusters + UMAP
 scripts/03_annotation.R                # lineage scoring -> cell-type labels
 scripts/04_candidate_gene_localization.R  # the core deliverable
 scripts/05_composition_shift.R         # healthy vs cirrhotic composition test
+scripts/06_gutliver_lps_pathway.R      # LPS receptor pathway, gut-liver axis extension
 ```
 
 Run in order from the repo root with `Rscript scripts/0N_....R`. Each script
@@ -136,3 +198,9 @@ samples) folders in the same GEO series were excluded from this analysis.
   paired samples) — the mechanistic link drawn here (bulk DEG signal ↔
   single-cell source population) is a plausible biological inference, not a
   directly matched within-patient validation.
+- `TLR4` transcript detection is sparse even in MP (the expected
+  high-expressing population, ~19-20%), a known scRNA-seq limitation for
+  this gene (low mRNA copy number, receptor recycling) — absolute `TLR4` pct
+  in Mesenchyme (≤1.3%) likely understates true receptor presence, and the
+  LPS-pathway/fibrogenic-gene correlations (ρ ≤ 0.25) should be read as
+  suggestive, not confirmatory.

@@ -1,4 +1,4 @@
-# GSE136103 — Cell-type localization of 7 fibrosis candidate genes in cirrhotic liver scRNA-seq
+# GSE136103 — Cell-type localization + upstream regulator analysis of fibrosis candidate genes in cirrhotic liver scRNA-seq
 
 Re-analysis of Ramachandran et al. 2019, *Nature* ("Resolving the fibrotic
 niche of human liver cirrhosis using single-cell transcriptomics", GSE136103)
@@ -7,7 +7,11 @@ to answer a question raised by [project3](https://github.com/bioinform25/project
 genes outside the canonical fibrosis gene list — `CCL21`, `CXCL8`, `CCL20`,
 `EPCAM`, `LUM`, `THY1`, `THBS2` — but bulk RNA-seq cannot say *which liver
 cell type* actually expresses them. This project uses single-cell data from
-the same disease (human liver cirrhosis) to localize each gene.
+the same disease (human liver cirrhosis) to localize each gene, then (in a
+2026-07-10 extension, see "Upstream TF / miRNA regulator analysis" below)
+asks which transcription factors and miRNAs regulate the 3 genes that
+localize most cleanly, as a more pharmacologically-oriented (protein/TF/
+miRNA target) follow-up.
 
 ## Design
 
@@ -205,6 +209,118 @@ published mouse mechanism might extend to humans" and "a cell-line finding
 may not hold in situ" is the honest, defensible framing for a fair
 presentation — not "this project discovered a new fibrosis pathway."
 
+## Upstream TF / miRNA regulator analysis (2026-07-10 extension)
+
+A second follow-up question, motivated by wanting a pharmacologically-oriented
+(protein/TF/miRNA) mechanism angle rather than just downstream effector genes:
+of the 3 genes that cleanly localize to activated Mesenchyme with a clean
+condition effect (`LUM`, `THY1`, `THBS2`), what regulates them, and are any of
+those regulators more tractable drug targets than the effector genes
+themselves?
+
+- **TF activity** (`scripts/07_tf_regulon_analysis.R`): Mesenchyme cells were
+  aggregated to **patient-level pseudobulk** (n=5 healthy, n=5 cirrhotic --
+  the real biological replicate count, not the cell count) to avoid
+  pseudoreplication. TF regulon activity was inferred with
+  `decoupleR::run_ulm()` against the **CollecTRI** transcription-factor
+  network (1,188 TFs, fetched directly from the OmniPath REST API -- the
+  `decoupleR::get_collectri()` / `OmnipathR::transcriptional()` R wrappers
+  currently error against the live server's response schema, a package/server
+  version mismatch, not a data problem). TF activity was compared cirrhotic
+  vs healthy per TF (Wilcoxon, BH-adjusted), and cross-referenced against
+  which TFs have a direct CollecTRI edge into `LUM`/`THY1`/`THBS2`.
+- **miRNA targets** (`scripts/08_mirna_target_analysis.R`): `multiMiR` was
+  queried for validated (miRTarBase/miRecords/TarBase) and predicted
+  (TargetScan) interactions targeting the same 3 genes, then cross-checked
+  against a literature-curated list of established fibrosis-associated miRNA
+  families (miR-29, -21, -192, -200, -214, -34a, -122, -155).
+- **Druggability** (`scripts/09_regulator_druggability.R`): TF candidates
+  were queried against DGIdb (same approach as project3). DGIdb does not
+  meaningfully cover miRNA-targeting agents, so miRNA "druggability" instead
+  used a small hand-curated table of clinical-stage miRNA-modulating
+  compounds relevant to the specific miRNA families found, verified via live
+  web search (source links in that script's comments), not a database query.
+
+### Results
+
+**TF activity**: with only 5 patients per group, **no TF survives BH
+correction** (min padj ≈ 0.52) -- this is an honest limitation of the sample
+size, not a null result to hide. Reporting nominal (uncorrected) p-values
+instead, among the 22 TFs with a direct CollecTRI edge into `LUM`/`THY1`/
+`THBS2` (`results/tables/07_tf_activity_mesenchyme.csv`,
+`results/figures/07_tf_activity_barplot.png`):
+
+| TF | Target | Direction (mor) | Activity diff (cirr-healthy) | nominal p | DGIdb drugs |
+|---|---|---|---|---|---|
+| EOMES | THY1 | activates | +1.43 | 0.0079 | 1 (glatiramer) |
+| ZFP42 | THY1 | activates | +3.48 | 0.0079 | 0 |
+| SMAD4 | THBS2 | activates | +2.42 | 0.0159 | 5 (incl. cetuximab) |
+
+`SMAD4` is the most mechanistically satisfying hit: it is the canonical
+co-SMAD of the TGF-β pathway (already in project3's *canonical* fibrosis gene
+list), directly activates `THBS2` per CollecTRI, and is nominally more active
+in cirrhotic Mesenchyme -- i.e., this re-derives, rather than discovers, the
+textbook TGF-β/SMAD → fibrogenic-ECM axis, which is a useful positive-control
+sanity check on the pseudobulk/decoupleR pipeline itself. `EOMES` and `ZFP42`
+are the statistically strongest hits but biologically less expected in this
+context (EOMES: T-box factor, mainly T/NK-cell differentiation; ZFP42/REX1:
+pluripotency factor) -- flagged as an intriguing, not confirmed, lead per the
+Limitations below. `SMAD3`/`SMAD2` (the other TGF-β SMADs) also target
+`THBS2` in CollecTRI but were not nominally significant here (p=0.22, 0.69).
+
+**miRNA targets**: `LUM`/`THY1`/`THBS2` had 424 validated interactions
+combined; the multi-gene ones landing in an established fibrosis-miRNA family
+are the most interpretable (`results/tables/08_mirna_validated_targets.csv`,
+`09_combined_regulator_network_edges.csv`, `figures/09_regulator_network.png`):
+
+| miRNA | Targets (of LUM/THY1/THBS2) | Family | Clinical-stage compound |
+|---|---|---|---|
+| hsa-miR-29a/b/c-3p | miR-29b: all 3; miR-29a/c: 2 of 3 | miR-29 (classic anti-fibrotic/anti-collagen family) | Remlarsen (MRG-201), miR-29 mimic -- Phase 2 in cutaneous fibrosis, **discontinued** for immune-related adverse events |
+| hsa-miR-21-5p | LUM, THBS2 | miR-21 (classic pro-fibrotic family) | Lademirsen (RG-012), anti-miR-21 -- Phase 2 in Alport kidney fibrosis, **discontinued 2022** for futility (safety was acceptable, efficacy endpoint not met) |
+| hsa-miR-34a-5p | THY1, THBS2 | miR-34a | MRX34, liposomal mimic -- Phase 1 in solid tumors (not fibrosis), **halted** after serious immune-mediated adverse events incl. deaths |
+| hsa-miR-214-3p | THBS2 | miR-214 | none identified |
+
+Note also that `let-7` family members and `miR-1-3p` technically hit all 3
+genes with validated evidence too (`results/tables/08_mirna_multi_target_
+candidates.csv`), but these are broadly-expressed, extensively-profiled
+miRNAs with large target repertoires in general -- landing atop a
+multi-target list is expected for them regardless of fibrosis relevance, so
+they are not treated as fibrosis-specific leads the way the miR-29/-21/-34a/
+-214 family hits are.
+
+**Taken together**, this analysis's most defensible, novel-ish observation is
+that **`miR-29b-3p` has validated evidence for repressing all three
+Mesenchyme fibrogenic genes at once** (`LUM`, `THY1`, `THBS2`) -- consistent
+with, and mechanistically explaining why, a miR-29 mimic (remlarsen) was
+pursued clinically for fibrosis in the first place, even though that specific
+compound did not reach approval. The `SMAD4`→`THBS2` TF finding is a
+positive-control confirmation of known TGF-β biology rather than a new
+finding. The `EOMES`/`ZFP42`→`THY1` TF findings and the `miR-214`→`THBS2`
+finding are the least-explored leads but rest on the weakest statistical
+footing (nominal p only, n=5 vs 5, no independent replication) and no
+clinical-stage compound was identified for `miR-214` in this search.
+
+### Limitations (regulator analysis)
+
+- n=5 vs 5 patients for the pseudobulk TF-activity test is small; the exact
+  Wilcoxon test at this sample size has a minimum possible p-value of
+  ~0.0079, and nothing survives BH correction across ~1,000 TFs tested. All
+  TF findings here are nominal/exploratory, not confirmed.
+- CollecTRI and multiMiR (TargetScan/miRTarBase) edges are literature- and
+  prediction-derived, not validated in this specific cirrhotic Mesenchyme
+  population -- they say a regulatory relationship is plausible/reported
+  elsewhere, not that it is active in this exact cell state.
+- The miRNA-drug clinical-stage compound table is a small, manually verified
+  set focused on the specific miRNA families that came out of this analysis,
+  not an exhaustive or database-driven survey -- absence of a listed compound
+  (e.g., for miR-214) means none was found in this search, not that none
+  exists.
+- All three clinical-stage miRNA-modulating compounds identified
+  (remlarsen, lademirsen, MRX34) failed to reach approval, for different
+  reasons (immune tolerability x2, efficacy futility x1) -- this is reported
+  as an important caveat on the drug-class level: "druggable mechanism" here
+  should not be read as "clinically de-risked modality."
+
 ## Pipeline
 
 ```
@@ -216,6 +332,9 @@ scripts/03_annotation.R                # lineage scoring -> cell-type labels
 scripts/04_candidate_gene_localization.R  # the core deliverable
 scripts/05_composition_shift.R         # healthy vs cirrhotic composition test
 scripts/06_gutliver_lps_pathway.R      # LPS receptor pathway, gut-liver axis extension
+scripts/07_tf_regulon_analysis.R       # CollecTRI TF activity, Mesenchyme pseudobulk
+scripts/08_mirna_target_analysis.R     # multiMiR miRNA targets of LUM/THY1/THBS2
+scripts/09_regulator_druggability.R    # DGIdb (TF) + literature (miRNA) druggability, network figure
 ```
 
 Run in order from the repo root with `Rscript scripts/0N_....R`. Each script

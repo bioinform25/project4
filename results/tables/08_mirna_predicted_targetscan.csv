@@ -1,0 +1,5 @@
+mature_mirna_id,target_symbol,databases,n_evidence,known_fibrosis_family
+hsa-miR-124-3p.1,THBS2,targetscan,NA,NA
+hsa-miR-125b-5p,THY1,targetscan,NA,NA
+hsa-miR-125a-5p,THY1,targetscan,NA,NA
+hsa-miR-4319,THY1,targetscan,NA,NA

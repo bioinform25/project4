@@ -1,0 +1,5 @@
+mirna_family,compound,modality,indication,status
+miR-29,Remlarsen (MRG-201),miR-29 mimic,"Cutaneous fibrosis / keloid (Phase 2, NCT03601052)",Discontinued -- Phase 2 showed severe immune-related adverse events despite on-target ECM/collagen repression in Phase 1
+miR-21,Lademirsen (RG-012),anti-miR-21 (LNA),"Alport syndrome kidney fibrosis (Phase 2, HERA study)",Discontinued 2022 -- stopped for futility (did not meet eGFR-decline efficacy endpoint; safety was acceptable)
+miR-34a,MRX34,liposomal miR-34a mimic,Advanced solid tumors incl. liver cancer (Phase 1),"Halted -- serious immune-mediated adverse events including patient deaths; not developed for fibrosis, listed for context since miR-34a targets THBS2/THY1 here"
+miR-214,none identified,-,-,No clinical-stage compound found in this search

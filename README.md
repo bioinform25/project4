@@ -11,7 +11,10 @@ the same disease (human liver cirrhosis) to localize each gene, then (in a
 2026-07-10 extension, see "Upstream TF / miRNA regulator analysis" below)
 asks which transcription factors and miRNAs regulate the 3 genes that
 localize most cleanly, as a more pharmacologically-oriented (protein/TF/
-miRNA target) follow-up.
+miRNA target) follow-up, and finally (same-day second extension, see
+"CellChat ligand-receptor cell-cell communication analysis" below) asks
+which *other* liver cell types signal into the Mesenchyme population via
+ligand-receptor pairs, and how that changes in cirrhosis.
 
 ## Design
 
@@ -321,6 +324,130 @@ clinical-stage compound was identified for `miR-214` in this search.
   as an important caveat on the drug-class level: "druggable mechanism" here
   should not be read as "clinically de-risked modality."
 
+## CellChat ligand-receptor cell-cell communication analysis (2026-07-10, second extension)
+
+The TF/miRNA analysis above asks what drives `LUM`/`THY1`/`THBS2` expression
+from *inside* the Mesenchyme cell. This extension asks the complementary
+question with **CellChat**: which *other* liver cell types signal into
+Mesenchyme via ligand-receptor pairs, and does that signaling repertoire
+change between healthy and cirrhotic liver? This was the CellChat direction
+discussed earlier in this project's history and deliberately deferred until
+the TF/miRNA analysis was done first.
+
+### Design
+
+- `scripts/10_cellchat_prep.R`: the Seurat object was split by `condition`
+  (healthy: 35,074 cells; cirrhotic: 25,851 cells) and a separate CellChat
+  object was built for each using **all three** CellChatDB.human categories
+  (Secreted Signaling, ECM-Receptor, Cell-Cell Contact — ECM-Receptor
+  specifically because `LUM`/`THY1`/`THBS2` are ECM-associated genes).
+  `population.size = TRUE` was used because this cohort mixes CD45+/CD45-
+  sorted fractions, so raw cell-type proportions in the data do not reflect
+  true tissue composition. Standard pipeline: `subsetData` →
+  `identifyOverExpressedGenes`/`Interactions` → `computeCommunProb` →
+  `filterCommunication(min.cells=10)` → `computeCommunProbPathway` →
+  `aggregateNet`.
+- `scripts/11_cellchat_compare.R`: merged the two conditions for comparison,
+  checked whether `LUM`/`THY1`/`THBS2` themselves appear as ligands/receptors
+  in CellChatDB, then specifically extracted all significant signaling
+  **into Mesenchyme** (`targets.use = "Mesenchyme"`) per condition, computed
+  which specific ligand-receptor pairs are gained/lost in cirrhosis, and
+  queried DGIdb for the receptor genes driving the gained signaling.
+
+### Results
+
+**`THBS2` and `THY1` are themselves signaling ligands in CellChatDB** (`LUM`
+is not present in CellChatDB as either a ligand or receptor) —
+`results/tables/10_candidate_genes_in_cellchatdb.csv`:
+
+| Ligand | Category | Receptors |
+|---|---|---|
+| `THBS2` | ECM-Receptor | ITGA3+ITGB1, ITGAV+ITGB3, SDC1, SDC4, CD36, **CD47** |
+| `THY1` | Cell-Cell Contact | ITGAM+ITGB2, ITGAX+ITGB2, ITGAV+ITGB3 |
+
+This means the Mesenchyme cells expressing more `THBS2`/`THY1` in cirrhosis
+are not just passively marked by these genes — they may actively be
+*signaling outward* through them (e.g. the `THBS2`-`CD47` "don't-eat-me"
+axis is a recognized immune-evasion signal in other CD47-expressing
+disease contexts, though this project did not test that specific
+hypothesis here — it is flagged as a lead, not demonstrated).
+
+**Global network summary** (`results/figures/10_interaction_count_strength.png`):
+total inferred interactions were similar between conditions (healthy 1,512
+vs cirrhotic 1,551), but overall interaction *strength* was lower in
+cirrhotic (0.518 vs 0.354) — i.e., cirrhotic liver does not have a globally
+"louder" communication network, it has a **reorganized** one (61 vs 68
+significant pathways detected per condition; `results/figures/
+11_pathway_information_flow.png` shows which pathways are healthy- vs
+cirrhotic-dominant across the whole network).
+
+**Signaling into Mesenchyme specifically** grows substantially: 46
+significant ligand-receptor pairs in healthy vs **76 in cirrhotic**
+(`results/tables/11_mesenchyme_incoming_signaling_all.csv`) — 56 pairs are
+newly significant in cirrhotic ("gained"), 26 drop out ("lost")
+(`results/tables/11_mesenchyme_incoming_{gained,lost}_in_cirrhotic.csv`).
+The gained signaling is dominated by **`COLLAGEN` (20 pairs) and `LAMININ`
+(14 pairs)**, and critically, 18 of those specific collagen/laminin pairs
+have Mesenchyme itself as the *source* — i.e., activated stellate cells
+increasingly signal to each other (autocrine/paracrine) via the very ECM
+components they produce, a self-reinforcing fibrotic amplification loop.
+The remaining gained signal comes from Endothelia (11 pairs, consistent
+with this project's earlier finding of near-tripled Endothelia proportion
+in cirrhosis), Cholangiocyte (10, consistent with the ductular-reaction
+composition shift), and Hepatocyte (9), via `MK`(midkine)/`FN1`/`SPP1`
+signaling (`results/figures/11_mesenchyme_incoming_bubble.png`).
+
+**Druggability of the gained-signal receptors**
+(`results/tables/11_gained_receptor_druggability.csv`), ranked by how many
+gained edges each receptor gene participates in:
+
+| Receptor | Gained edges | DGIdb drugs | Note |
+|---|---|---|---|
+| `CD44` | 24 | 12 | hyaluronan/`SPP1`/collagen receptor |
+| `ITGA1` | 18 | 1 (SAN-300) | collagen receptor subunit |
+| `ITGB1` | 18 | 15 | collagen/laminin receptor subunit |
+| `LRP1` | 5 | 3 | |
+| `EDNRB` | 1 | **29** (incl. **bosentan, ambrisentan** — approved endothelin-receptor antagonists) | only 1 gained edge, but an already-approved drug class exists |
+| `PDGFRA` | 1 | 77 (incl. imatinib) | extensively drugged in oncology already |
+| `TGFBR2` | 1 | 10 | canonical TGF-β axis, third independent time it surfaces this session (also hit in the TF-regulon and canonical-gene-list analyses) |
+
+`ITGA1`/`ITGB1` (the collagen-receptor integrin pair) and `CD44` are the
+clearest mechanistic story here — they are the direct receptors for the
+gained collagen/laminin autocrine signal identified above, and both are at
+least partially druggable already (an anti-ITGA1 candidate, SAN-300,
+exists; CD44 and ITGB1 have broader existing pharmacology). `EDNRB`
+appearing at all is notable less for its edge count (only 1) and more
+because **approved endothelin-receptor-antagonist drugs already exist**
+(bosentan, ambrisentan, for pulmonary arterial hypertension) — endothelin
+signaling in liver fibrosis has prior literature support, so this is a
+plausible repurposing lead rather than a new discovery.
+
+### Limitations (CellChat analysis)
+
+- CellChat infers communication from average expression per cell-type group
+  per condition (not per patient), so — unlike the TF-regulon analysis above
+  — this is **not** patient-level pseudoreplication-safe; a result could in
+  principle be driven by one or two patients with more cells in a given
+  type/condition. This is a known property of the standard CellChat workflow
+  (patient-stratified CellChat runs were not attempted here) and should be
+  kept in mind alongside the patient-level cell-count table in
+  `04_candidate_gene_localization.R`'s composition analysis.
+  `Hepatocyte`/`Mast cell`/`pDC` have the fewest cells overall and their
+  CellChat edges should be read cautiously for the same reason flagged
+  earlier for `CCL21`'s Hepatocyte localization.
+- "Gained"/"lost" here means *newly crossing CellChat's significance
+  threshold*, not necessarily "absent" vs "present" biologically — a pair
+  just below threshold in healthy and just above in cirrhotic is technically
+  "gained" but the underlying biology is more continuous than that binary
+  framing suggests.
+- CellChatDB ligand-receptor annotations (e.g., `THBS2`-`CD47`) are curated
+  from the general literature, not validated in this cohort or cell state —
+  their appearance here means the interaction is plausible per the
+  database, not that it was directly demonstrated to occur.
+- As with the TF/miRNA section, these are hypothesis-generating
+  observations from a single re-analyzed public cohort, not new
+  experimentally validated biology.
+
 ## Pipeline
 
 ```
@@ -335,6 +462,8 @@ scripts/06_gutliver_lps_pathway.R      # LPS receptor pathway, gut-liver axis ex
 scripts/07_tf_regulon_analysis.R       # CollecTRI TF activity, Mesenchyme pseudobulk
 scripts/08_mirna_target_analysis.R     # multiMiR miRNA targets of LUM/THY1/THBS2
 scripts/09_regulator_druggability.R    # DGIdb (TF) + literature (miRNA) druggability, network figure
+scripts/10_cellchat_prep.R             # per-condition CellChat objects (healthy, cirrhotic)
+scripts/11_cellchat_compare.R          # merged comparison, signaling into Mesenchyme, receptor druggability
 ```
 
 Run in order from the repo root with `Rscript scripts/0N_....R`. Each script

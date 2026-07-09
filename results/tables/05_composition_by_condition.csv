@@ -1,0 +1,25 @@
+"condition","cell_type","n","pct"
+"cirrhotic","B cell",1211,4.68453831573247
+"cirrhotic","Cholangiocyte",2353,9.10216239217052
+"cirrhotic","Cycling",398,1.53959227882867
+"cirrhotic","Endothelia",4979,19.2603767745929
+"cirrhotic","Hepatocyte",262,1.01350044485707
+"cirrhotic","ILC",4357,16.8542802986345
+"cirrhotic","MP",4483,17.3416889095199
+"cirrhotic","Mast cell",91,0.352017330083943
+"cirrhotic","Mesenchyme",763,2.95152992147306
+"cirrhotic","Plasma cell",478,1.84905806351785
+"cirrhotic","T cell",6287,24.320142354261
+"cirrhotic","pDC",189,0.731112916328188
+"healthy","B cell",739,2.10697382676627
+"healthy","Cholangiocyte",1138,3.2445686263329
+"healthy","Cycling",498,1.41985516336888
+"healthy","Endothelia",3132,8.92969150938017
+"healthy","Hepatocyte",49,0.139704624508183
+"healthy","ILC",10222,29.1440953412784
+"healthy","MP",6420,18.3041569253578
+"healthy","Mast cell",107,0.305069282089297
+"healthy","Mesenchyme",1604,4.57318811655357
+"healthy","Plasma cell",406,1.1575526030678
+"healthy","T cell",10616,30.2674345669157
+"healthy","pDC",143,0.407709414381023

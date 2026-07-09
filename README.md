@@ -152,6 +152,59 @@ modest and `TLR4` transcript levels are low (a known scRNA-seq limitation —
 see Limitations), so this is reported as suggestive support for a
 gut-liver-axis mechanism, not a confirmed causal link.
 
+## Discussion — what is (and isn't) new here
+
+Most of this project's results **confirm existing literature** rather than
+discover something unpublished — worth stating plainly rather than overselling
+a re-analysis project as novel science:
+
+- `THY1` → activated stellate cell and `EPCAM` → cholangiocyte are established
+  canonical markers.
+- `THBS2` and `LUM`'s localization to Mesenchyme/HSCs is already reported in
+  independent mouse studies (2026 LXN-THBS2-TLR4 axis paper, 2012+ LUM
+  fibrosis literature, mouse HSC-activation scRNA atlases) — this project's
+  contribution there is a **human cross-species confirmation**, not a new
+  finding.
+- The general concept that stellate cells "activate" without necessarily
+  expanding in number during fibrosis is also not new to the field, even
+  though this project's specific quantification of it for `LUM`/`THY1`/`THBS2`
+  on this cohort had not been published before.
+
+Two things found during this project genuinely have not been published
+elsewhere, as far as the literature check above could determine:
+
+1. **The CCL20 discrepancy.** A 2018 in vitro study (LX-2 stellate-cell line +
+   palmitic acid loading) reported hepatic stellate cells as the primary
+   source of CCL20 in NAFLD. This project's in vivo human cirrhosis data
+   directly disagrees: Mesenchyme cells show near-zero `CCL20` detection
+   (0.3-0.7% expressing) in GSE136103. Nobody appears to have checked this
+   specific claim against in vivo single-cell data before. This is reported
+   as an **honest contradiction worth flagging**, not a resolved answer —
+   plausible explanations (immortalized-cell-line artifact vs. scRNA dropout
+   vs. NAFLD/palmitic-acid-specific stimulus not present in mixed-etiology
+   cirrhosis) are listed above but not adjudicated here.
+2. **HSC-expressed LPS-receptor machinery, in this human cohort.** A 2025
+   eLife paper already reused this exact GSE136103 cohort for a
+   gut-liver-axis question but only examined AOAH in macrophages/hepatocytes;
+   a separate 2026 mouse study showed `THBS2` activates HSCs via TLR4
+   signaling, but never checked LPS-receptor expression on stellate cells
+   directly. This project is, as far as could be determined, the first to
+   check `CD14`/`LY96`/`TLR4` expression specifically in the Mesenchyme
+   population of a human cirrhosis single-cell dataset, finding it rises
+   sharply in cirrhotic tissue and correlates modestly (Spearman ρ = 0.18-0.25)
+   with the `THBS2`/`LUM`/`THY1` fibrogenic signature.
+
+**Both of these should be framed as hypothesis-generating pilot observations,
+not established discoveries.** The LPS-receptor correlation is modest in
+strength and rests on sparse `TLR4` transcript detection (a known scRNA-seq
+limitation, see Limitations) — it suggests the published mouse TLR4-HSC
+mechanism *could* extend to human cirrhotic tissue, not that it has been
+proven to. The CCL20 contradiction is a real disagreement between two data
+sources, not evidence that either one is "wrong." Presenting these as "the
+published mouse mechanism might extend to humans" and "a cell-line finding
+may not hold in situ" is the honest, defensible framing for a fair
+presentation — not "this project discovered a new fibrosis pathway."
+
 ## Pipeline
 
 ```

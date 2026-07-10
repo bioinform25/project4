@@ -1,0 +1,12 @@
+receptor,source,condition,n_ligands,ligands
+CD44,Mesenchyme,cirrhotic,10,COL1A1; COL1A2; COL4A1; COL4A2; COL6A1; COL6A2; COL6A3; FN1; LAMA4; LAMB2
+CD44,Endothelia,cirrhotic,5,COL4A1; COL4A2; FN1; LAMA4; LAMB2
+CD44,Cholangiocyte,cirrhotic,4,COL4A2; FN1; LAMC1; SPP1
+CD44,Hepatocyte,cirrhotic,4,FN1; LAMB2; LAMC1; SPP1
+CD44,MP,cirrhotic,1,LGALS9
+EDNRA,Endothelia,healthy,1,EDN1
+EDNRB,Endothelia,cirrhotic,1,EDN1
+ITGA1_ITGB1,Mesenchyme,cirrhotic,9,COL1A1; COL1A2; COL4A1; COL4A2; COL6A1; COL6A2; COL6A3; LAMA4; LAMB2
+ITGA1_ITGB1,Endothelia,cirrhotic,4,COL4A1; COL4A2; LAMA4; LAMB2
+ITGA1_ITGB1,Cholangiocyte,cirrhotic,3,ANGPTL1; COL4A2; LAMC1
+ITGA1_ITGB1,Hepatocyte,cirrhotic,2,LAMB2; LAMC1

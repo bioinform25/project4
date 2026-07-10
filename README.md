@@ -14,7 +14,9 @@ localize most cleanly, as a more pharmacologically-oriented (protein/TF/
 miRNA target) follow-up, and finally (same-day second extension, see
 "CellChat ligand-receptor cell-cell communication analysis" below) asks
 which *other* liver cell types signal into the Mesenchyme population via
-ligand-receptor pairs, and how that changes in cirrhosis.
+ligand-receptor pairs, and how that changes in cirrhosis. A third extension
+(see "Receptor deep-dive" below) then digs specifically into the 4 druggable
+receptors that extension surfaced (`CD44`, `ITGA1`, `ITGB1`, `EDNRB`).
 
 ## Design
 
@@ -448,6 +450,101 @@ plausible repurposing lead rather than a new discovery.
   observations from a single re-analyzed public cohort, not new
   experimentally validated biology.
 
+## Receptor deep-dive: CD44 / ITGA1+ITGB1 / EDNRB (2026-07-10, third extension)
+
+The CellChat analysis above surfaced 4 druggable receptors receiving newly
+gained signaling in cirrhotic Mesenchyme (`CD44`, `ITGA1`, `ITGB1`, `EDNRB`).
+The user asked to dig deeper into these specifically. Three questions, using
+only data already computed in this repo (no new datasets):
+
+### Design
+
+- `scripts/12_receptor_correlation_localization.R`: (a) within cirrhotic
+  Mesenchyme cells, Spearman-correlated `CD44`/`ITGA1`/`ITGB1`/`EDNRB`/`EDNRA`
+  against the fibrogenic signature (`LUM`/`THY1`/`THBS2`), same method as the
+  LPS-pathway correlation in `06_gutliver_lps_pathway.R`; (b) compared
+  `ITGA1` against `ITGA8` and `ITGA11` (both present in this dataset) by
+  cell-type localization -- `ITGA11` is the integrin alpha subunit with the
+  strongest stellate-cell-specific fibrosis literature, not `ITGA1`, so this
+  checks whether the literature's preferred target is even detectable here.
+- `scripts/13_receptor_ligand_tracing.R`: reuses the already-computed
+  `11_mesenchyme_incoming_signaling_all.csv` (no need to reload the large
+  CellChat objects) to trace which cell type sends each receptor's ligand(s),
+  and whether that source changes between healthy and cirrhotic.
+- `scripts/14_receptor_clinical_context.R`: hand-curated, web-search-verified
+  (2026-07-10) clinical/druggability context per receptor -- same rigor as
+  the miRNA compound check in `09_regulator_druggability.R`, i.e. checking
+  whether a real compound targets the *exact* gene/subtype that changed here,
+  not just "a drug exists for this gene family."
+
+### Results
+
+**Correlation** (`results/tables/12_receptor_fibrogenic_correlation_mesenchyme_cirrhotic.csv`,
+`figures/12_receptor_correlation_heatmap.png`): `EDNRB` is the only receptor
+with a clean positive correlation with all 3 fibrogenic genes (LUM 0.22, THY1
+0.16, THBS2 0.07), while `EDNRA` is *negatively* correlated with all 3 (-0.13
+to -0.08) -- an independent confirmation, via a completely different method
+(cell-level correlation vs. CellChat's differential-significance test), that
+`EDNRB` specifically (not `EDNRA`) tracks with fibrogenic activation. `CD44`,
+`ITGA1`, `ITGB1` show only weak correlations (0.01-0.29) with the fibrogenic
+genes and with each other.
+
+**Integrin subunit comparison** (`results/tables/12_integrin_subunit_localization_summary.csv`,
+`figures/12_integrin_subunit_comparison_dotplot.png`) -- a genuinely
+unexpected result: `ITGA11`, the subunit with by far the strongest
+stellate-cell-specific fibrosis literature (hedgehog-ITGA11 axis,
+miR-12135/ITGA11 axis), is barely detected in this dataset (5.2% of cirrhotic
+Mesenchyme cells, up from 1.5% healthy) -- far below `ITGA1` (41.4%, up from
+23.9%). `ITGA8` actually *decreases* in Mesenchyme (15.0% -> 4.6%) and its
+top-localizing cell type is Plasma cell, not Mesenchyme, directly
+contradicting the assumption it would behave like a stellate marker here.
+This is reported as an honest discrepancy: either (a) `ITGA11`'s established
+role doesn't transfer well from the mouse/culture-activated-HSC literature to
+this human in-vivo cirrhosis cohort, or (b) `ITGA11` suffers the same
+low-copy-number scRNA-seq dropout already flagged for `TLR4` in
+`06_gutliver_lps_pathway.R`. Either way, this project's own hit (`ITGA1`) is
+*not* the field's preferred integrin target, and that gap is stated plainly
+rather than glossed over.
+
+**Ligand-source tracing** (`results/tables/13_receptor_ligand_source_tracing.csv`,
+`figures/13_receptor_ligand_source_barplot.png`): all `CD44` and
+`ITGA1+ITGB1` signaling into Mesenchyme is exclusively cirrhotic (zero
+healthy-condition edges for either receptor) -- Mesenchyme itself is the
+largest single source (autocrine, 9-10 distinct ligands: collagens,
+laminins, `FN1`), with Endothelia/Cholangiocyte/Hepatocyte contributing the
+rest paracrinely. For the endothelin axis, both `EDN1-EDNRA` (healthy) and
+`EDN1-EDNRB` (cirrhotic) draw on the *same* ligand from the *same* source
+(Endothelia) -- only the receptor side switches, meaning Mesenchyme's
+endothelin-sensing repertoire itself changes with disease, not simply how
+much `EDN1` is around.
+
+**Clinical context** (`results/tables/14_receptor_clinical_context.csv`) --
+the honest bottom line: **none of the 4 receptors has a compound that is
+both actively in clinical development and precisely matched to the specific
+gene/subtype that actually changed in this analysis**:
+
+| Gene (our hit) | Compound checked | Gap |
+|---|---|---|
+| `ITGA1`/`ITGB1` | SAN-300 (anti-VLA-1) | Phase 1 in rheumatoid arthritis only, never tested in fibrosis |
+| `ITGA1`/`ITGB1` | (n/a) | The field's real target is `ITGA11`, a different alpha subunit, barely detected in our data |
+| `CD44` | RG7356 (anti-CD44) | Terminated early in oncology (no dose-response); not a fibrosis compound |
+| `EDNRB` | Bosentan / Ambrisentan | Bosentan carries hepatotoxicity risk; ambrisentan is ETA-selective, doesn't engage EDNRB (ETB) |
+| `EDNRA` | Zibotentan | Actively in an ongoing cirrhosis trial (ZEAL-UNLOCK) -- but targets the receptor already active in *healthy* tissue, not the EDNRB signal that is new in cirrhosis |
+
+### Limitations (receptor deep-dive)
+
+- The correlation and ligand-tracing analyses are internally consistent with
+  each other and with the earlier CellChat/TF results, but all derive from
+  the same single GSE136103 cohort -- this is convergent evidence within one
+  dataset, not independent replication.
+- `ITGA11`/`TLR4`-type low-count scRNA-seq dropout is a recurring caveat in
+  this project (also flagged in `06_gutliver_lps_pathway.R`) and cannot be
+  fully distinguished from genuine low expression without deeper-coverage
+  data (e.g., targeted qPCR or a snRNA-seq platform with better capture for
+  low-copy transcripts).
+- The clinical-context table is a snapshot of a small, manually verified set
+  of compounds (2026-07-10), not an exhaustive drug-repurposing screen.
+
 ## Pipeline
 
 ```
@@ -464,6 +561,9 @@ scripts/08_mirna_target_analysis.R     # multiMiR miRNA targets of LUM/THY1/THBS
 scripts/09_regulator_druggability.R    # DGIdb (TF) + literature (miRNA) druggability, network figure
 scripts/10_cellchat_prep.R             # per-condition CellChat objects (healthy, cirrhotic)
 scripts/11_cellchat_compare.R          # merged comparison, signaling into Mesenchyme, receptor druggability
+scripts/12_receptor_correlation_localization.R  # CD44/ITGA1/ITGB1/EDNRB vs fibrogenic genes; ITGA1 vs ITGA8 vs ITGA11
+scripts/13_receptor_ligand_tracing.R   # which cell type sends each receptor's ligand, healthy vs cirrhotic
+scripts/14_receptor_clinical_context.R # literature-verified compound/trial status per receptor
 ```
 
 Run in order from the repo root with `Rscript scripts/0N_....R`. Each script
